@@ -63,6 +63,7 @@ struct Index {
     // 复杂度校验：必须包含数字、字母、标点符号
     const hasNumber = /\d/.test(pwd); // 包含数字
     const hasLetter = /[a-zA-Z]/.test(pwd); // 包含字母
+
     const hasSymbol = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?~`]/.test(pwd); // 包含常见标点
 
     if (!hasNumber) {
