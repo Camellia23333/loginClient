@@ -1,173 +1,121 @@
+// utils/HttpUtil.ets
 import http from '@ohos.net.http';
 
-// 配置 API 基础地址
-const BASE_URL = 'http://192.168.1.130:3000/api';
+// ==================== 配置常量 ====================
+// 服务器地址,修改为实际IP地址
+const BASE_URL: string = 'http://192.168.1.100:8080';
 
-// API 响应接口
-export class ApiResponse<T> {
-  code: number = 0;
-  message: string = '';
-  data: T | null = null;
+// ==================== 接口定义 ====================
+
+// 用户信息接口
+export interface UserInfo {
+  userId: number;
+  username: string;
+  phone: string;
 }
 
-// 用户登录/注册响应数据
-export class UserResponseData {
-  token: string = '';
-  userInfo: UserInfoData = new UserInfoData();
+// 登录响应数据接口
+export interface LoginData {
+  token: string;
+  userInfo: UserInfo;
 }
 
-export class UserInfoData {
-  id: number = 0;
-  account: string = '';
-  nickname: string = '';
-  avatar: string = '';
+// 统一响应接口
+export interface LoginResponse {
+  code: number;
+  message: string;
+  data: LoginData | null;
 }
 
-
-// HTTP 工具类
-export class HttpUtil {
-  /**
-   * 通用 HTTP 请求方法
-   */
-  static async request<T>(
-    url: string,
-    method: http.RequestMethod,
-    data: Record<string, string | number> | null,
-    headers: Record<string, string> | null
-  ): Promise<ApiResponse<T>> {
-    const httpRequest = http.createHttp();
-
-    try {
-      const fullUrl = BASE_URL + url;
-      const token = AppStorage.get<string>('token') || '';
-
-      const defaultHeaders: Record<string, string> = {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      };
-
-      // 合并 headers
-      let finalHeaders = defaultHeaders;
-      if (headers) {
-        const keys = Object.keys(headers);
-        for (let i = 0; i < keys.length; i++) {
-          const key = keys[i];
-          finalHeaders[key] = headers[key];
-        }
-      }
-
-      const options: http.HttpRequestOptions = {
-        method: method,
-        header: finalHeaders,
-        readTimeout: 30000,
-        connectTimeout: 30000
-      };
-
-      // 处理请求数据
-      if (data) {
-        if (method === http.RequestMethod.GET) {
-          const params: string[] = [];
-          const keys = Object.keys(data);
-          for (let i = 0; i < keys.length; i++) {
-            const key = keys[i];
-            const value = data[key];
-            params.push(`${key}=${encodeURIComponent(String(value))}`);
-          }
-          options.extraData = fullUrl + '?' + params.join('&');
-        } else {
-          options.extraData = JSON.stringify(data);
-        }
-      }
-
-      const response = await httpRequest.request(fullUrl, options);
-
-      if (response.responseCode === 200) {
-        const result = JSON.parse(response.result as string) as ApiResponse<T>;
-        return result;
-      } else {
-        const errorResponse = new ApiResponse<T>();
-        errorResponse.code = -1;
-        errorResponse.message = `请求失败: ${response.responseCode}`;
-        return errorResponse;
-      }
-    } catch (error) {
-      console.error('HTTP 请求错误:', JSON.stringify(error));
-      const errorResponse = new ApiResponse<T>();
-      errorResponse.code = -1;
-      errorResponse.message = '网络请求失败';
-      return errorResponse;
-    } finally {
-      httpRequest.destroy();
-    }
-  }
-
-  static get<T>(url: string, params: Record<string, string | number> | null): Promise<ApiResponse<T>> {
-    return HttpUtil.request<T>(url, http.RequestMethod.GET, params, null);
-  }
-
-  static post<T>(url: string, data: Record<string, string | number> | null): Promise<ApiResponse<T>> {
-    return HttpUtil.request<T>(url, http.RequestMethod.POST, data, null);
-  }
-
-  static put<T>(url: string, data: Record<string, string | number> | null): Promise<ApiResponse<T>> {
-    return HttpUtil.request<T>(url, http.RequestMethod.PUT, data, null);
-  }
-
-  static deleteRequest<T>(url: string, params: Record<string, string | number> | null): Promise<ApiResponse<T>> {
-    return HttpUtil.request<T>(url, http.RequestMethod.DELETE, params, null);
-  }
+// 登录请求参数接口
+interface LoginRequest {
+  phone: string;
+  password: string;
 }
 
-// ========== API 接口定义 ==========
-
-export class ApiService {
-  // ===== 用户相关 =====
-  static async login(account: string, password: string): Promise<ApiResponse<UserResponseData>> {
-    const data: Record<string, string> = {
-      'account': account,
-      'password': password
-    };
-    return await HttpUtil.post<UserResponseData>('/user/login', data);
-  }
-
-}
-
-
-// ========== 配置管理 ==========
+// ==================== 配置管理器 ====================
 export class ConfigManager {
-  // 设置 API 基地址
-  static setBaseUrl(url: string): void {
-    AppStorage.setOrCreate('apiBaseUrl', url);
-  }
+  private static token: string = '';
+  private static userInfo: UserInfo | null = null;
 
-  static getBaseUrl(): string {
-    return AppStorage.get<string>('apiBaseUrl') || BASE_URL;
-  }
-
-  // 设置用户 Token
   static setToken(token: string): void {
-    AppStorage.setOrCreate('token', token);
+    ConfigManager.token = token;
+    console.log('Token已保存');
   }
 
   static getToken(): string {
-    return AppStorage.get<string>('token') || '';
+    return ConfigManager.token;
   }
 
-  static clearToken(): void {
-    AppStorage.setOrCreate('token', '');
+  static setUserInfo(userInfo: UserInfo): void {
+    ConfigManager.userInfo = userInfo;
+    console.log('用户信息已保存:', JSON.stringify(userInfo));
   }
 
-  // 设置用户信息
-  static setUserInfo(userInfo: UserInfoData): void {
-    AppStorage.setOrCreate('userInfo', JSON.stringify(userInfo));
+  static getUserInfo(): UserInfo | null {
+    return ConfigManager.userInfo;
   }
 
-  static getUserInfo(): UserInfoData {
-    const userInfoStr = AppStorage.get<string>('userInfo') || '{}';
-    return JSON.parse(userInfoStr) as UserInfoData;
+  static clear(): void {
+    ConfigManager.token = '';
+    ConfigManager.userInfo = null;
+    console.log('登录信息已清除');
   }
 
-  static clearUserInfo(): void {
-    AppStorage.setOrCreate('userInfo', '{}');
+  static isLoggedIn(): boolean {
+    return ConfigManager.token !== '' && ConfigManager.userInfo !== null;
+  }
+}
+
+// ==================== API服务 ====================
+export class ApiService {
+
+  /**
+   * 登录接口
+   */
+  static login(phone: string, password: string): Promise<LoginResponse> {
+    return new Promise((resolve, reject) => {
+      const httpRequest = http.createHttp();
+
+      const requestData: LoginRequest = {
+        phone: phone,
+        password: password
+      };
+
+      console.log('发起登录请求:', BASE_URL + '/api/login');
+      console.log('请求参数:', JSON.stringify(requestData));
+
+      httpRequest.request(
+        BASE_URL + '/api/login',
+        {
+          method: http.RequestMethod.POST,
+          header: {
+            'Content-Type': 'application/json'
+          },
+          extraData: JSON.stringify(requestData),
+          connectTimeout: 15000,
+          readTimeout: 15000
+        },
+        (err, data) => {
+          if (!err) {
+            console.log('请求成功，状态码:', data.responseCode);
+            console.log('响应数据:', data.result);
+
+            try {
+              const response: LoginResponse = JSON.parse(data.result as string);
+              resolve(response);
+            } catch (parseError) {
+              console.error('JSON解析失败:', parseError);
+              reject(new Error('响应数据解析失败'));
+            }
+          } else {
+            console.error('请求失败:', JSON.stringify(err));
+            reject(err);
+          }
+
+          httpRequest.destroy();
+        }
+      );
+    });
   }
 }
