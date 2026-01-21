@@ -97,7 +97,7 @@ struct WelcomePage {
       if (this.cachedUiContext !== null) {
         const router = this.cachedUiContext.getRouter();
         if (router && typeof router.replaceUrl === 'function') {
-          router.replaceUrl({ url: 'pages/index' });
+          router.replaceUrl({ url: 'pages/Index' });
           console.log("跳转到登录页成功");
         } else {
           throw new Error('Router.replaceUrl方法不存在或无效');

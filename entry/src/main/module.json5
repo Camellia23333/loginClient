@@ -2,6 +2,14 @@
   "module": {
     "name": "entry",
     "type": "entry",
+    "requestPermissions": [
+      {
+        "name": "ohos.permission.INTERNET"
+      },
+      {
+        "name": "ohos.permission.GET_NETWORK_INFO"
+      }
+    ],
     "description": "$string:module_desc",
     "mainElement": "EntryAbility",
     "deviceTypes": [
@@ -10,6 +18,12 @@
     "deliveryWithInstall": true,
     "installationFree": false,
     "pages": "$profile:main_pages",
+    "metadata": [
+      {
+        "name": "ohos.net.http",
+        "resource": "$profile:network_config"
+      }
+    ],
     "abilities": [
       {
         "name": "EntryAbility",

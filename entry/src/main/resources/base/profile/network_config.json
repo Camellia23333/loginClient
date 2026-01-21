@@ -1,0 +1,12 @@
+{
+  "network-security-config": {
+    "base-config": {
+      "permit-cleartext-traffic": true,
+      "trust-anchors": [
+        {
+          "certificates": "system"
+        }
+      ]
+    }
+  }
+}

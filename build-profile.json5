@@ -7,11 +7,11 @@
         "material": {
           "certpath": "C:\\Users\\zzpus\\.ohos\\config\\default_demo1_6s5s86oEisZxzokGUUXmKQhv83K2IeSWs4PYERdEZa0=.cer",
           "keyAlias": "debugKey",
-          "keyPassword": "0000001BF859772966FB7365921FAE6F459385A16A52D5A602E4132C0B4001558E79F81FBDDDD0948FAD34",
+          "keyPassword": "0000001B3EB53B9A2A14B2C3C86C2C5E985A37A926CBF4689C97D5493B60A460CB43F5CF8EC8201C1BF87B",
           "profile": "C:\\Users\\zzpus\\.ohos\\config\\default_demo1_6s5s86oEisZxzokGUUXmKQhv83K2IeSWs4PYERdEZa0=.p7b",
           "signAlg": "SHA256withECDSA",
           "storeFile": "C:\\Users\\zzpus\\.ohos\\config\\default_demo1_6s5s86oEisZxzokGUUXmKQhv83K2IeSWs4PYERdEZa0=.p12",
-          "storePassword": "0000001B1073C0971CDAECCA393CBFF1EBD31B2A6122E20B148EEED0CC107691898906458D244573805901"
+          "storePassword": "0000001B50FEBB211C8469405CB07CA15E45F4728802E6CA940C01BE2879BCA3FFD59B8AAA7687E7E12E04"
         }
       }
     ],

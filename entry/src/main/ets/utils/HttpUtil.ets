@@ -2,32 +2,27 @@
 import http from '@ohos.net.http';
 
 // ==================== 配置常量 ====================
-// 服务器地址,修改为实际IP地址
-const BASE_URL: string = 'http://192.168.1.100:8080';
+// ⚠️ 修改为电脑的实际 IP 地址
+const BASE_URL: string = 'http://192.168.1.130:8080';
 
 // ==================== 接口定义 ====================
-
-// 用户信息接口
 export interface UserInfo {
   userId: number;
   username: string;
   phone: string;
 }
 
-// 登录响应数据接口
 export interface LoginData {
   token: string;
   userInfo: UserInfo;
 }
 
-// 统一响应接口
 export interface LoginResponse {
   code: number;
   message: string;
   data: LoginData | null;
 }
 
-// 登录请求参数接口
 interface LoginRequest {
   phone: string;
   password: string;
@@ -40,7 +35,7 @@ export class ConfigManager {
 
   static setToken(token: string): void {
     ConfigManager.token = token;
-    console.log('Token已保存');
+    console.info('[ConfigManager] Token已保存');
   }
 
   static getToken(): string {
@@ -49,7 +44,7 @@ export class ConfigManager {
 
   static setUserInfo(userInfo: UserInfo): void {
     ConfigManager.userInfo = userInfo;
-    console.log('用户信息已保存:', JSON.stringify(userInfo));
+    console.info('[ConfigManager] 用户信息已保存:', JSON.stringify(userInfo));
   }
 
   static getUserInfo(): UserInfo | null {
@@ -59,7 +54,7 @@ export class ConfigManager {
   static clear(): void {
     ConfigManager.token = '';
     ConfigManager.userInfo = null;
-    console.log('登录信息已清除');
+    console.info('[ConfigManager] 登录信息已清除');
   }
 
   static isLoggedIn(): boolean {
@@ -70,11 +65,15 @@ export class ConfigManager {
 // ==================== API服务 ====================
 export class ApiService {
 
-  /**
-   * 登录接口
-   */
   static login(phone: string, password: string): Promise<LoginResponse> {
     return new Promise((resolve, reject) => {
+      console.info('[ApiService] ========================================');
+      console.info('[ApiService] 开始登录请求');
+      console.info('[ApiService] BASE_URL:', BASE_URL);
+      console.info('[ApiService] 完整地址:', BASE_URL + '/api/login');
+      console.info('[ApiService] 手机号:', phone);
+      console.info('[ApiService] ========================================');
+
       const httpRequest = http.createHttp();
 
       const requestData: LoginRequest = {
@@ -82,40 +81,62 @@ export class ApiService {
         password: password
       };
 
-      console.log('发起登录请求:', BASE_URL + '/api/login');
-      console.log('请求参数:', JSON.stringify(requestData));
+      const requestBody: string = JSON.stringify(requestData);
+      console.info('[ApiService] 请求体:', requestBody);
 
       httpRequest.request(
         BASE_URL + '/api/login',
         {
           method: http.RequestMethod.POST,
           header: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
           },
-          extraData: JSON.stringify(requestData),
-          connectTimeout: 15000,
-          readTimeout: 15000
-        },
-        (err, data) => {
-          if (!err) {
-            console.log('请求成功，状态码:', data.responseCode);
-            console.log('响应数据:', data.result);
-
-            try {
-              const response: LoginResponse = JSON.parse(data.result as string);
-              resolve(response);
-            } catch (parseError) {
-              console.error('JSON解析失败:', parseError);
-              reject(new Error('响应数据解析失败'));
-            }
-          } else {
-            console.error('请求失败:', JSON.stringify(err));
-            reject(err);
-          }
-
-          httpRequest.destroy();
+          extraData: requestBody,
+          connectTimeout: 30000,
+          readTimeout: 30000
         }
-      );
+      ).then((data: http.HttpResponse) => {
+        console.info('[ApiService] ========== 请求成功 ==========');
+        console.info('[ApiService] HTTP状态码:', data.responseCode);
+        console.info('[ApiService] 响应头:', JSON.stringify(data.header));
+        console.info('[ApiService] 响应体:', JSON.stringify(data.result));
+
+        if (data.responseCode === 200) {
+          try {
+            let resultStr: string = '';
+            if (typeof data.result === 'string') {
+              resultStr = data.result;
+            } else {
+              resultStr = JSON.stringify(data.result);
+            }
+
+            const response: LoginResponse = JSON.parse(resultStr);
+            console.info('[ApiService] 解析成功:', JSON.stringify(response));
+            resolve(response);
+          } catch (parseErr) {
+            console.error('[ApiService] JSON解析失败:', JSON.stringify(parseErr));
+            reject(new Error('响应数据解析失败'));
+          }
+        } else {
+          console.error('[ApiService] HTTP状态码异常:', data.responseCode);
+          reject(new Error('HTTP状态码: ' + data.responseCode));
+        }
+
+        httpRequest.destroy();
+
+      }).catch((err: Error) => {
+        // ✅ 打印详细错误信息
+        console.error('[ApiService] ========== 请求失败 ==========');
+        console.error('[ApiService] 错误类型:', typeof err);
+        console.error('[ApiService] 错误信息:', JSON.stringify(err));
+        console.error('[ApiService] 错误名称:', err.name);
+        console.error('[ApiService] 错误消息:', err.message);
+        console.error('[ApiService] ========================================');
+
+        httpRequest.destroy();
+        reject(err);
+      });
     });
   }
 }
