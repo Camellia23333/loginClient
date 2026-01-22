@@ -1,7 +1,7 @@
 // pages/WelcomePage.ets
 import { promptAction } from '@kit.ArkUI';
 import { BusinessError } from '@ohos.base';
-import { ConfigManager } from '../utils/HttpUtil';
+import { ApiService, ConfigManager, UserStore } from '../utils/HttpUtil';
 
 // 路由参数接口
 interface RouterParams {
@@ -19,16 +19,32 @@ struct WelcomePage {
   // 缓存UIContext
   private cachedUiContext: UIContext | null = null;
 
+  //设置定时器检查token状态
+  private timerId: number = -1;
+
   aboutToAppear(): void {
-    // 获取UIContext
+    //初始化 Context
+    UserStore.getInstance().init(this.getUIContext());
+
+    //立即检查一次
+    this.checkTokenStatus();
+
+    // 每隔5000毫秒自动检查一次 Token 状态，实现自动踢出
+    this.timerId = setInterval(() => {
+      this.checkTokenStatus();
+    }, 5000);
+
     try {
       this.cachedUiContext = this.getUIContext();
-      console.log('WelcomePage UIContext缓存成功');
+      //每次进入页面，都将最新的 Context 注入 UserStore，这样 HttpUtil 全局拦截时，就能拿到当前页面的 Context 进行跳转
+      if (this.cachedUiContext) {
+        UserStore.getInstance().init(this.cachedUiContext);
+      }
     } catch (err) {
-      const error = err as BusinessError;
-      console.error('获取UIContext失败：', error.message);
-      this.cachedUiContext = null;
+      console.error('UIContext init failed', err);
     }
+
+
 
     // 获取路由传递的参数
     try {
@@ -53,10 +69,59 @@ struct WelcomePage {
       }
     }
 
-    // 获取当前时间
+
+
+/*    // 获取当前时间
+    this.updateTime();*/
+    // 初始化数据
+    this.initData();
+
+    //页面加载时，主动发起一个请求来验证 Token 有效性
+    // 如果 Token 失效或被踢，HttpUtil 会自动跳转回登录页
+    this.checkTokenStatus();
+
     this.updateTime();
   }
-
+  // 从路由参数或缓存加载数据
+  private initData() {
+    // 获取路由传递的参数
+    try {
+      if (this.cachedUiContext !== null) {
+        const router = this.cachedUiContext.getRouter();
+        const params = router.getParams() as RouterParams;
+        if (params) {
+          this.username = params.username || '用户';
+          this.phone = params.phone || '';
+        }
+      }
+    } catch (err) {
+      console.error('获取路由参数失败：', err);
+    }
+    // 如果没有路由参数，从 ConfigManager 取
+    if (!this.username || this.username === '用户') {
+      const userInfo = ConfigManager.getUserInfo();
+      if (userInfo) {
+        this.username = userInfo.username || '用户';
+        this.phone = userInfo.phone || '';
+      }
+    }
+  }
+  //验证 Token 状态的方法
+  private async checkTokenStatus() {
+    try {
+      // 调用 getUserInfo 接口，该接口在 ApiService 中定义了
+      // 这里的目的不是为了数据，而是为了触发 HttpUtil 的拦截器
+      await ApiService.getUserInfo();
+      console.log('Token 验证通过，连接正常');
+    } catch (error) {
+      // 这里的 error 已经被 HttpUtil 处理过了，弹窗+跳转
+      // 只需要处理非 401/409 的网络错误即可
+      const err = error as BusinessError;
+      if (err.code !== 401 && err.code !== 409) {
+        console.error('检查登录状态失败');
+      }
+    }
+  }
   // 更新时间
   private updateTime(): void {
     const now = new Date();
@@ -91,13 +156,20 @@ struct WelcomePage {
     }, 500);
   }
 
+  // 页面销毁时清理定时器
+  aboutToDisappear(): void {
+    if (this.timerId !== -1) {
+      clearInterval(this.timerId);
+    }
+  }
+
   // 跳转到登录页
   private navigateToLogin(): void {
     try {
       if (this.cachedUiContext !== null) {
         const router = this.cachedUiContext.getRouter();
         if (router && typeof router.replaceUrl === 'function') {
-          router.replaceUrl({ url: 'pages/Index' });
+          router.replaceUrl({ url: 'pages/index' });
           console.log("跳转到登录页成功");
         } else {
           throw new Error('Router.replaceUrl方法不存在或无效');

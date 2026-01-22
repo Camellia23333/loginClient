@@ -1,10 +1,9 @@
 import { promptAction } from '@kit.ArkUI';
 import { BusinessError } from '@ohos.base';
 import type { UIContext } from '@ohos.arkui.UIContext';
-//适配HttpUtil的导出类型
-import { ApiService, ConfigManager, LoginResponse, UserInfo } from '../utils/HttpUtil';
+import { ApiService, ConfigManager, LoginResponse, UserStore } from '../utils/HttpUtil';
 
-// 定义跳转参数类型，解决untyped-obj-literals报错
+// 定义跳转参数类型
 interface NavigateParams {
   username: string;
   phone: string;
@@ -22,18 +21,17 @@ struct Index {
 
   // 缓存UIContext
   private cachedUiContext: UIContext | null = null;
-
   // 防抖定时器ID
   private debounceTimer: number = -1;
-  // 最后点击时间戳
   private lastClickTime: number = 0;
-  // 点击间隔限制(毫秒)
   private readonly CLICK_INTERVAL: number = 2000;
 
-  // 组件初始化时获取UIContext
+  // 组件初始化：初始化UserStore
   aboutToAppear(): void {
     try {
       this.cachedUiContext = this.getUIContext();
+      // 初始化UserStore的UIContext，用于跳转登录页
+      UserStore.getInstance().init(this.cachedUiContext);
       console.log('Stage模式UIContext缓存成功：', !!this.cachedUiContext);
     } catch (err) {
       const error = err as BusinessError;
@@ -50,7 +48,7 @@ struct Index {
     }
   }
 
-  // 手机号正则校验方法
+  // 手机号正则校验
   private validatePhone(phone: string): boolean {
     const phoneReg = /^1[3-9]\d{9}$/;
     if (phone.trim() === '') {
@@ -101,7 +99,6 @@ struct Index {
 
     // 时间戳节流
     if (currentTime - this.lastClickTime < this.CLICK_INTERVAL) {
-      console.log('点击过于频繁，请稍后再试');
       promptAction.openToast({ message: '操作过于频繁，请稍后再试' });
       return;
     }
@@ -112,21 +109,19 @@ struct Index {
       return;
     }
 
-    // 更新最后点击时间
     this.lastClickTime = currentTime;
 
-    // 定时器防抖
+    // 防抖
     if (this.debounceTimer !== -1) {
       clearTimeout(this.debounceTimer);
     }
 
-    //直接使用number
     this.debounceTimer = setTimeout(() => {
       this.goLogin();
     }, 300);
   }
 
-  // 登录方法
+  // 登录方法，集成UserStore
   private async goLogin(): Promise<void> {
     // 前端校验
     const isPhoneValid = this.validatePhone(this.account);
@@ -135,7 +130,6 @@ struct Index {
       return;
     }
 
-    // 开启加载态
     this.isLoading = true;
     console.log("准备登录: " + this.account);
 
@@ -144,9 +138,8 @@ struct Index {
       console.log("登录响应: " + JSON.stringify(response));
 
       if (response.code === 200 && response.data) {
-        // 保存登录信息
-        ConfigManager.setToken(response.data.token);
-        ConfigManager.setUserInfo(response.data.userInfo); // 类型完全匹配
+        // 登录成功：更新UserStore状态
+        UserStore.getInstance().loginSuccess(response.data.userInfo, response.data.token);
 
         promptAction.openToast({ message: '登录成功' });
         console.log("准备跳转到欢迎页");
@@ -163,7 +156,14 @@ struct Index {
     } catch (error) {
       const err = error as BusinessError;
       console.error("登录错误:", JSON.stringify(err));
-      promptAction.openToast({ message: '网络请求失败，请检查连接' });
+      // 区分401/409和普通错误提示
+      if (err.code === 401) {
+        promptAction.openToast({ message: '登录已过期，请重新登录' });
+      } else if (err.code === 409) {
+        promptAction.openToast({ message: '已在其他设备登录' });
+      } else {
+        promptAction.openToast({ message: '网络请求失败，请检查连接' });
+      }
       this.isLoading = false;
     }
   }
@@ -240,7 +240,6 @@ struct Index {
 
     try {
       const promptActionCtx = this.cachedUiContext.getPromptAction();
-
       switch (error.code) {
         case 401:
           promptActionCtx.openToast({ message: '参数错误' });
