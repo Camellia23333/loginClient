@@ -1,4 +1,4 @@
-import { promptAction } from '@kit.ArkUI';
+import { promptAction, router } from '@kit.ArkUI';
 import { BusinessError } from '@ohos.base';
 import type { UIContext } from '@ohos.arkui.UIContext';
 import { ApiService, ConfigManager, LoginResponse, UserStore } from '../utils/HttpUtil';
@@ -369,6 +369,14 @@ struct Index {
       .onClick(() => {
         this.onLoginClick();
       })
+      //在底部新增立即注册
+      Text('立即注册')
+        .fontSize(14)
+        .fontColor('#007dff')
+        .onClick(() => {
+          // 跳转到注册页
+          router.pushUrl({ url: 'pages/RegisterPage' });
+        })
     }
     .padding(24)
     .height('100%')

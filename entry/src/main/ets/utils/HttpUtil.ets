@@ -63,6 +63,13 @@ export interface TokenResult {
   token: string;
 }
 
+//增加注册请求接口
+export interface RegisterRequest {
+  phone: string;
+  code: string;
+  password: string;
+}
+
 // ==================== 持久化管理器 ====================
 class PreferencesManager {
   private static instance: PreferencesManager;
@@ -423,6 +430,32 @@ export class ApiService {
   static async validateToken(): Promise<ApiResponse<string>> {
     return await ApiService.httpRequest.request<string>('/api/auth/validate-token', {
       method: http.RequestMethod.GET
+    });
+  }
+
+  /**
+   * 发送验证码
+   */
+  static async sendCode(phone: string): Promise<ApiResponse<string>> {
+    return await ApiService.httpRequest.request<string>('/api/send-code', {
+      method: http.RequestMethod.POST,
+      extraData: JSON.stringify({ phone: phone })
+    });
+  }
+
+  /**
+   * 用户注册
+   */
+  static async register(phone: string, code: string, password: string): Promise<ApiResponse<string>> {
+    const requestData: RegisterRequest = {
+      phone: phone,
+      code: code,
+      password: password
+    };
+
+    return await ApiService.httpRequest.request<string>('/api/register', {
+      method: http.RequestMethod.POST,
+      extraData: JSON.stringify(requestData)
     });
   }
 }
