@@ -9,6 +9,9 @@ struct RegisterPage {
   @State code: string = '';
   @State password: string = '';
   @State confirmPassword: string = '';
+  @State captchaImage: string = ''; // 存图片的Base64
+  @State captchaUuid: string = '';  // 存图片的UUID
+  @State captchaCode: string = '';  // 用户输入的图形验证码
 
   //新增：密码错误提示文字
   @State pwdError: string = '';
@@ -26,22 +29,50 @@ struct RegisterPage {
     }
   }
 
+  // 页面加载时获取一张验证码
+  async aboutToAppear() {
+    this.refreshCaptcha();
+  }
+
   /**
-   * 发送验证码逻辑
+   * 刷新图形验证码
+   */
+  private async refreshCaptcha() {
+    try {
+      const res = await ApiService.getCaptcha();
+      if (res.code === 200 && res.data) {
+        this.captchaImage = res.data.image;
+        this.captchaUuid = res.data.uuid;
+        this.captchaCode = ''; // 刷新后清空输入框
+      }
+    } catch (err) {
+      console.error('获取验证码失败', err);
+    }
+  }
+
+  /**
+   * 发送验证码逻辑,添加
    */
   private async sendVerifyCode() {
     if (this.phone.length !== 11) {
       promptAction.showToast({ message: '请输入正确的11位手机号' });
       return;
     }
+    //校验是否输入了图形验证码
+    if (!this.captchaCode) {
+      return promptAction.showToast({ message: '请输入图形验证码' });
+    }
 
     try {
-      const res = await ApiService.sendCode(this.phone);
+      //传入图形验证码参数
+      const res = await ApiService.sendCode(this.phone, this.captchaCode, this.captchaUuid);
       if (res.code === 200) {
         promptAction.showToast({ message: '验证码已发送，请留意控制台或短信' });
         this.startCountdown();
       } else {
         promptAction.showToast({ message: res.message || '发送失败' });
+        // 如果失败，比如验证码错了，自动刷新一下验证码
+        this.refreshCaptcha();
       }
     } catch (err) {
       const error = err as BusinessError;
@@ -164,6 +195,27 @@ struct RegisterPage {
           .height(50)
           .borderRadius(8)
           .backgroundColor('#F5F5F5')
+
+        //新增图形验证码区域
+        Row({ space: 10 }) {
+          TextInput({ placeholder: '输入右侧字符', text: this.captchaCode })
+            .layoutWeight(1)
+            .height(50)
+            .borderRadius(8)
+            .backgroundColor('#F5F5F5')
+            .onChange((val) => this.captchaCode = val)
+
+          // 验证码图片
+          Image(this.captchaImage)
+            .width(100)
+            .height(40)
+            .objectFit(ImageFit.Contain)
+            .backgroundColor('#E0E0E0') // 图片加载前的底色
+            .onClick(() => {
+              this.refreshCaptcha(); // 点击图片刷新
+            })
+        }
+        .width('100%')
 
         // 验证码输入框 + 按钮
         Row({ space: 10 }) {

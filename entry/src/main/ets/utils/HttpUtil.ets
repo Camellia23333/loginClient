@@ -70,6 +70,12 @@ export interface RegisterRequest {
   password: string;
 }
 
+//增加定义图形验证码的响应结构
+export interface CaptchaResult {
+  uuid: string;
+  image: string; // Base64字符串
+}
+
 // ==================== 持久化管理器 ====================
 class PreferencesManager {
   private static instance: PreferencesManager;
@@ -434,12 +440,25 @@ export class ApiService {
   }
 
   /**
-   * 发送验证码
+   * 获取图形验证码
    */
-  static async sendCode(phone: string): Promise<ApiResponse<string>> {
+  static async getCaptcha(): Promise<ApiResponse<CaptchaResult>> {
+    return await ApiService.httpRequest.request<CaptchaResult>('/api/captcha', {
+      method: http.RequestMethod.GET
+    });
+  }
+
+  /**
+   * 发送验证码，增加图形验证参数
+   */
+  static async sendCode(phone: string, captchaCode: string, captchaUuid: string): Promise<ApiResponse<string>> {
     return await ApiService.httpRequest.request<string>('/api/send-code', {
       method: http.RequestMethod.POST,
-      extraData: JSON.stringify({ phone: phone })
+      extraData: JSON.stringify({
+        phone: phone,
+        captchaCode: captchaCode,
+        captchaUuid: captchaUuid
+      })
     });
   }
 
