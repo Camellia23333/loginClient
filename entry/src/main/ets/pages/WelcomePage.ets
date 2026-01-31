@@ -237,16 +237,10 @@ struct WelcomePage {
         .fontColor('#333333')
         .margin({ top: 60, bottom: 20 })
 
-      // 欢迎回来
-      Text('欢迎回来')
-        .fontSize(18)
-        .fontColor('#666666')
-        .margin({ bottom: 10 })
-
       // 用户名
       Text(this.username)
         .fontSize(28)
-        .fontColor('#007DFF')
+        .fontColor('#333333')
         .fontWeight(FontWeight.Bold)
         .margin({ bottom: 15 })
 
@@ -276,11 +270,11 @@ struct WelcomePage {
       if (this.lastCheckTime) {
         Row() {
           Text('最后校验: ')
-            .fontSize(14)
+            .fontSize(16)
             .fontColor('#999999')
           Text(this.lastCheckTime)
-            .fontSize(14)
-            .fontColor('#52c41a')
+            .fontSize(16)
+            .fontColor('#666666')
         }
         .margin({ bottom: 30 })
       } else {
@@ -302,7 +296,7 @@ struct WelcomePage {
           }
         } else {
           Text('刷新登录状态')
-            .fontSize(16)
+            .fontSize(18)
             .fontColor('#007DFF')
         }
       }
@@ -318,16 +312,40 @@ struct WelcomePage {
         this.refreshTokenStatus();
       })
 
+      // 进入购物按钮
+      Button('进入购物')
+        .width('70%')
+        .height(48)
+        .fontSize(18)
+        .fontColor('#007DFF')
+        .backgroundColor('#E6F7FF')
+        .borderRadius(24)
+        .borderWidth(1)
+        .borderColor("#91D5FF")
+        .margin({ bottom: 16 })
+        .onClick(() => {
+          // 跳转到商品页
+          try {
+            if (this.cachedUiContext) {
+              this.cachedUiContext.getRouter().pushUrl({
+                url: 'pages/ProductListPage'
+              });
+            }
+          } catch (err) {
+            console.error('跳转失败', err);
+          }
+        })
+
       // 退出登录按钮
       Button('退出登录')
         .width('70%')
         .height(48)
         .fontSize(18)
-        .fontColor('#FF4D4F')
-        .backgroundColor('#FFF1F0')
+        .fontColor('#007DFF')
+        .backgroundColor('#E6F7FF')
         .borderRadius(24)
         .borderWidth(1)
-        .borderColor('#FFCCC7')
+        .borderColor('#91D5FF')
         .onClick(() => {
           this.logout();
         })

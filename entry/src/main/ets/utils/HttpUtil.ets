@@ -63,17 +63,35 @@ export interface TokenResult {
   token: string;
 }
 
-//增加注册请求接口
+//定义注册请求接口
 export interface RegisterRequest {
   phone: string;
   code: string;
   password: string;
 }
 
-//增加定义图形验证码的响应结构
+//定义图形验证码的响应结构
 export interface CaptchaResult {
   uuid: string;
   image: string; // Base64字符串
+}
+
+//定义订单结果接口，对应后端的 Orders 实体
+export interface OrderModel {
+  id: number;
+  orderNo: string;
+  amount: number;
+  status: number;
+  // ... 其他字段按需添加
+}
+
+//商品信息接口 ，对应后端的 Product 实体
+export interface ProductModel {
+  id: number;
+  name: string;
+  price: number;
+  totalStock: number;
+  availableStock: number; // 核心：可购买库存
 }
 
 // ==================== 持久化管理器 ====================
@@ -475,6 +493,63 @@ export class ApiService {
     return await ApiService.httpRequest.request<string>('/api/register', {
       method: http.RequestMethod.POST,
       extraData: JSON.stringify(requestData)
+    });
+  }
+
+  /**
+   * [新增] 获取商品列表
+   */
+  static async getProductList(): Promise<ApiResponse<ProductModel[]>> {
+    return await ApiService.httpRequest.request<ProductModel[]>('/api/product/list', {
+      method: http.RequestMethod.GET
+    });
+  }
+
+  /**
+   * 获取商品详情
+   */
+  static async getProduct(id: number): Promise<ApiResponse<ProductModel>> {
+    // 这里的 url 对应后端 Controller 的路径
+    return await ApiService.httpRequest.request<ProductModel>(`/api/product/${id}`, {
+      method: http.RequestMethod.GET
+    });
+  }
+
+  /**
+   * 提交订单 ，抢购
+   */
+  static async createOrder(userId: number, productId: number, count: number): Promise<ApiResponse<OrderModel>> {
+    return await ApiService.httpRequest.request<OrderModel>('/api/order/create', {
+      method: http.RequestMethod.POST,
+      extraData: JSON.stringify({
+        "userId": userId,
+        "productId": productId,
+        "count": count
+      })
+    });
+  }
+
+  /**
+   * 支付订单
+   */
+  static async payOrder(orderNo: string): Promise<ApiResponse<string>> {
+    return await ApiService.httpRequest.request<string>('/api/order/pay', {
+      method: http.RequestMethod.POST,
+      extraData: JSON.stringify({
+        "orderNo": orderNo
+      })
+    });
+  }
+
+  /**
+   * 取消订单
+   */
+  static async cancelOrder(orderNo: string): Promise<ApiResponse<string>> {
+    return await ApiService.httpRequest.request<string>('/api/order/cancel', {
+      method: http.RequestMethod.POST,
+      extraData: JSON.stringify({
+        "orderNo": orderNo
+      })
     });
   }
 }

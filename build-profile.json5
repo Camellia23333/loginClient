@@ -5,13 +5,13 @@
         "name": "default",
         "type": "HarmonyOS",
         "material": {
-          "certpath": "C:\\Users\\zzpus\\.ohos\\config\\default_demo1_6s5s86oEisZxzokGUUXmKQhv83K2IeSWs4PYERdEZa0=.cer",
+          "certpath": "C:/Users/zzpus/.ohos/config/default_demo1_6s5s86oEisZxzokGUUXmKQhv83K2IeSWs4PYERdEZa0=.cer",
           "keyAlias": "debugKey",
-          "keyPassword": "0000001B3EB53B9A2A14B2C3C86C2C5E985A37A926CBF4689C97D5493B60A460CB43F5CF8EC8201C1BF87B",
-          "profile": "C:\\Users\\zzpus\\.ohos\\config\\default_demo1_6s5s86oEisZxzokGUUXmKQhv83K2IeSWs4PYERdEZa0=.p7b",
+          "keyPassword": "0000001B9E585004EE2BCC53A78587AC60C2D9B982566C97EC07A28F5F56ACFBC4F11CCAC3D270CF98798C",
+          "profile": "C:/Users/zzpus/.ohos/config/default_demo1_6s5s86oEisZxzokGUUXmKQhv83K2IeSWs4PYERdEZa0=.p7b",
           "signAlg": "SHA256withECDSA",
-          "storeFile": "C:\\Users\\zzpus\\.ohos\\config\\default_demo1_6s5s86oEisZxzokGUUXmKQhv83K2IeSWs4PYERdEZa0=.p12",
-          "storePassword": "0000001B50FEBB211C8469405CB07CA15E45F4728802E6CA940C01BE2879BCA3FFD59B8AAA7687E7E12E04"
+          "storeFile": "C:/Users/zzpus/.ohos/config/default_demo1_6s5s86oEisZxzokGUUXmKQhv83K2IeSWs4PYERdEZa0=.p12",
+          "storePassword": "0000001BB8635CF2CC26CF0E4FD0BF48107504DC44887A3B70406412E132B1C1774C5FAA44A28D5A60D586"
         }
       }
     ],
